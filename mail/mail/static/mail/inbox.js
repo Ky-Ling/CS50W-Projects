@@ -18,6 +18,7 @@ function compose_email() {
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
+  document.querySelector("#email-view").style.display = "none";
 
   // Clear out composition fields
   document.querySelector('#compose-recipients').value = '';
@@ -52,7 +53,6 @@ function submit_email(event) {
 
 
 
-
 function load_email(id) {
   fetch("/emails/" + id)
     .then(response => response.json())
@@ -69,9 +69,39 @@ function load_email(id) {
           <li class="list-group-item"><b>Subject: </b> <span>${email["subject"]}</span></li>
           <li class="list-group-item"><b>Time:    </b> <span>${email["timestamp"]}</span></li>
         </ul>
-        <p class="m-2">${email["body"]}</p>
+        <p class="m-2"><b>${email["body"]}</b></p>
       `    
+
+
+      // Create "mark as unread" button and append it to DOM
+      readButton = document.createElement("button");
+      readButton.className = ("btn-secondary m-1");
+      readButton.innerHTML = "Mark as Unread";
+      readButton.addEventListener("click", function() {
+        fetch("/emails/" + email["id"], {
+          method: "PUT",
+          body: JSON.stringify({
+            read: false
+          })
+        })
+        .then(response => load_mailbox("inbox"))
+      })
+      view.appendChild(readButton);
+
+      // Mark this email as read
+      if(!email["read"]) {
+        fetch("/emails/" + email["id"], {
+          method: "PUT",
+          body: JSON.stringify({
+            read: true
+          })
+        })
+      }
     }) 
+
+
+  
+  
 }
 
 
@@ -80,6 +110,7 @@ function load_mailbox(mailbox) {
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector("#email-view").style.display = "none";
 
   // Show the mailbox name
   const view = document.querySelector('#emails-view');
@@ -90,6 +121,8 @@ function load_mailbox(mailbox) {
     // .then(emails => console.log(emails))
 
     .then(emails => {
+
+      // Generate div for each mail
       emails.forEach(email => {
         let div = document.createElement("div");
         div.className = email["read"] ? "email-list-item-read" : "email-list-item-unread";
