@@ -51,8 +51,6 @@ function submit_email(event) {
 
 
 
-
-
 function load_email(id) {
   fetch("/emails/" + id)
     .then(response => response.json())
@@ -70,12 +68,54 @@ function load_email(id) {
           <li class="list-group-item"><b>Time:    </b> <span>${email["timestamp"]}</span></li>
         </ul>
         <p class="m-2"><b>${email["body"]}</b></p>
-      `    
+      `;
+
+
+      // Create reply button and append it to DOM
+      reply = document.createElement("button");
+      reply.className = "btn-primary m-1";
+      reply.innerHTML = "Reply";
+      reply.addEventListener("click", function() {
+        compose_email();
+
+        // populate fields with information from email
+        document.querySelector("#compose-recipients").value = email["sender"];
+
+        let subject = email["subject"];
+        console.log(subject.split(" ", 1)[0]);
+        if (subject.split(" ", 1)[0] != "Re:") {
+          subject = "Re: " + subject;
+        }
+
+        document.querySelector("#compose-subject").value=subject;
+
+        let body = `
+          On ${email['timestamp']}, ${email['sender']} wrote: ${email['body']}
+        `;
+        document.querySelector('#compose-body').value = body;
+      }) 
+
+      view.appendChild(reply);
+
+
+      // Create Archive button and append it to DOM
+      archiveButton = document.createElement('button');
+      archiveButton.className = "btn-primary m-1";
+      archiveButton.innerHTML = !email['archived'] ? 'Archive' : 'Unarchive';
+      archiveButton.addEventListener('click', function() {
+        fetch('/emails/' + email['id'], {
+          method: 'PUT',
+          body: JSON.stringify({ archived : !email['archived'] })
+        })
+        .then(response => load_mailbox('inbox'))
+      });
+      view.appendChild(archiveButton);
+
 
 
       // Create "mark as unread" button and append it to DOM
       readButton = document.createElement("button");
-      readButton.className = ("btn-secondary m-1");
+      readButton.className = "btn-secondary m-1";
       readButton.innerHTML = "Mark as Unread";
       readButton.addEventListener("click", function() {
         fetch("/emails/" + email["id"], {
@@ -136,5 +176,5 @@ function load_mailbox(mailbox) {
       });
     })
 
-  
+    
 }
